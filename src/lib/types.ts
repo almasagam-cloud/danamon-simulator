@@ -31,6 +31,7 @@ export interface SimulatorConfig {
   jns_error_status: number;
 
   // Gateway Webhook URLs
+  callback_url: string;
   wa_webhook_url: string;
   sms_webhook_url: string;
 
