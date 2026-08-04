@@ -45,8 +45,8 @@ export const DEFAULT_CONFIG: SimulatorConfig = {
   wa_scenario: 'wa_success',
   sms_scenario: 'sms_success',
 
-  wa_sent_delay_seconds: 2,
-  wa_delivered_delay_seconds: 5,
+  wa_sent_delay_seconds: 0,
+  wa_delivered_delay_seconds: 1,
   sms_dr_delay_seconds: 3,
 
   coster_success_body: JSON.stringify({
