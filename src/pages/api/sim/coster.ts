@@ -222,6 +222,107 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     }, config.wa_sent_delay_seconds + config.wa_delivered_delay_seconds, 'WA DR: SENT (after DELIVERED)');
 
+  } else if (scenario === 'wa_read_before_delivered_sent') {
+    // READ DR first (out-of-order), then DELIVERED, then SENT
+    scheduleDR(waWebhookUrl, {
+      headers: { 'X-Request-Id': uuidv4() },
+      body: {
+        entry: [
+          {
+            changes: [
+              {
+                field: 'messages',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '6283879329048', phone_number_id: '108020779027196' },
+                  statuses: [
+                    {
+                      id: msgId,
+                      recipient_id: to,
+                      status: 'read',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      conversation: { id: uuidv4().replace(/-/g, ''), expiration_timestamp: null, origin: { type: 'authentication' } },
+                      pricing: { billable: true, category: 'authentication', pricing_model: 'PMP', type: 'regular' }
+                    }
+                  ]
+                }
+              }
+            ],
+            id: '101585793013515',
+            time: Date.now()
+          }
+        ],
+        object: 'whatsapp_business_account',
+        xid: generateXid()
+      },
+    }, config.wa_sent_delay_seconds, 'WA DR: READ (out-of-order, first)');
+
+    scheduleDR(waWebhookUrl, {
+      headers: { 'X-Request-Id': uuidv4() },
+      body: {
+        entry: [
+          {
+            changes: [
+              {
+                field: 'messages',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '6283879329048', phone_number_id: '108020779027196' },
+                  statuses: [
+                    {
+                      id: msgId,
+                      recipient_id: to,
+                      status: 'delivered',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      conversation: { id: uuidv4().replace(/-/g, ''), expiration_timestamp: null, origin: { type: 'authentication' } },
+                      pricing: { billable: true, category: 'authentication', pricing_model: 'PMP', type: 'regular' }
+                    }
+                  ]
+                }
+              }
+            ],
+            id: '101585793013515',
+            time: Date.now()
+          }
+        ],
+        object: 'whatsapp_business_account',
+        xid: generateXid()
+      },
+    }, config.wa_sent_delay_seconds + config.wa_delivered_delay_seconds, 'WA DR: DELIVERED (after READ)');
+
+    scheduleDR(waWebhookUrl, {
+      headers: { 'X-Request-Id': uuidv4() },
+      body: {
+        entry: [
+          {
+            changes: [
+              {
+                field: 'messages',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '6283879329048', phone_number_id: '108020779027196' },
+                  statuses: [
+                    {
+                      id: msgId,
+                      recipient_id: to,
+                      status: 'sent',
+                      timestamp: String(Math.floor(Date.now() / 1000)),
+                      conversation: { id: uuidv4().replace(/-/g, ''), expiration_timestamp: String(Math.floor(Date.now() / 1000) + 86400), origin: { type: 'authentication' } },
+                      pricing: { billable: true, category: 'authentication', pricing_model: 'PMP', type: 'regular' }
+                    }
+                  ]
+                }
+              }
+            ],
+            id: '101585793013515',
+            time: Date.now()
+          }
+        ],
+        object: 'whatsapp_business_account',
+        xid: generateXid()
+      },
+    }, config.wa_sent_delay_seconds + (config.wa_delivered_delay_seconds * 2), 'WA DR: SENT (after DELIVERED)');
+
   } else if (scenario === 'wa_threshold_expire') {
     // No DR sent — API Gateway should reroute to SMS after threshold
     await appendLog({

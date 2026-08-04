@@ -1,9 +1,10 @@
 // ─── Scenarios ─────────────────────────────────────────────
 export type WaScenario =
-  | 'wa_success'                // WA success, DR: SENT → DELIVERED
-  | 'wa_fail'                   // WA error (5xx), no DR
-  | 'wa_delivered_before_sent'  // WA success, DR: DELIVERED first, then SENT
-  | 'wa_threshold_expire';      // WA success, no DR at all (trigger threshold reroute)
+  | 'wa_success'                  // WA success, DR: SENT → DELIVERED
+  | 'wa_fail'                     // WA error (5xx), no DR
+  | 'wa_delivered_before_sent'    // WA success, DR: DELIVERED first, then SENT
+  | 'wa_read_before_delivered_sent' // WA success, DR: READ first, then DELIVERED, then SENT
+  | 'wa_threshold_expire';        // WA success, no DR at all (trigger threshold reroute)
 
 export type SmsScenario =
   | 'sms_success'   // SMS accepted, auto send DR after delay
