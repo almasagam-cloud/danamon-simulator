@@ -23,6 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const note = (() => {
     if (body?.statuses?.[0]?.status === 'delivered') return 'Callback received: WA DELIVERED DR';
     if (body?.statuses?.[0]?.status === 'sent') return 'Callback received: WA SENT DR';
+    if (body?.statuses?.[0]?.status === 'read') return 'Callback received: WA READ DR';
+    if (body?.statuses?.[0]?.status === 'failed') return 'Callback received: WA FAILED DR';
     if (body?.channel === 'sms') return 'Callback received: SMS DR';
     return 'Callback received: unknown DR type';
   })();

@@ -5,7 +5,7 @@ import { getConfig, scheduleDR } from '@/lib/helpers';
  * POST /api/admin/trigger-dr
  *
  * Manually trigger a delivery report to the configured callback URL.
- * Body: { type: 'wa_sent' | 'wa_delivered' | 'sms', message_id: string, delay_seconds?: number }
+ * Body: { type: 'wa_sent' | 'wa_delivered' | 'wa_read' | 'wa_failed' | 'sms', message_id: string, delay_seconds?: number }
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -33,6 +33,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         body: { statuses: [{ id: message_id, status: 'delivered', timestamp: String(Date.now()) }] },
       }, delay_seconds, `Manual DR: WA DELIVERED (message_id: ${message_id})`);
       break;
+    case 'wa_read':
+      scheduleDR(waWebhookUrl, {
+        body: { statuses: [{ id: message_id, status: 'read', timestamp: String(Date.now()) }] },
+      }, delay_seconds, `Manual DR: WA READ (message_id: ${message_id})`);
+      break;
+    case 'wa_failed':
+      scheduleDR(waWebhookUrl, {
+        body: {
+          statuses: [
+            {
+              id: message_id,
+              status: 'failed',
+              timestamp: String(Date.now()),
+              errors: [{ code: 131026, title: 'Message undeliverable' }],
+            },
+          ],
+        },
+      }, delay_seconds, `Manual DR: WA FAILED (message_id: ${message_id})`);
+      break;
     case 'sms':
       scheduleDR(smsWebhookUrl, {
         method: 'GET',
@@ -50,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }, delay_seconds, `Manual DR: SMS DELIVERED (MessageId: ${message_id})`);
       break;
     default:
-      return res.status(400).json({ error: `Unknown type: ${type}. Use: wa_sent, wa_delivered, sms` });
+      return res.status(400).json({ error: `Unknown type: ${type}. Use: wa_sent, wa_delivered, wa_read, wa_failed, sms` });
   }
 
   return res.status(200).json({
