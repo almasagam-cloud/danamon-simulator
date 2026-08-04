@@ -57,16 +57,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // ── wa_success / wa_delivered_before_sent / wa_threshold_expire ─
-  const responseBody = interpolateCosterSuccess(config.coster_success_body, to);
+  const { wamid: msgId, xid: responseXid, body: responseBody } = interpolateCosterSuccess(config.coster_success_body, to);
   let parsedResponse: unknown;
   try { parsedResponse = JSON.parse(responseBody); } catch { parsedResponse = responseBody; }
 
-  // Extract the generated message id from response for DR
-  const msgId = (() => {
+  // Extract xid from response or fallback to responseXid
+  const xid = (() => {
     try {
       const r = JSON.parse(responseBody);
-      return r?.messages?.[0]?.id || 'unknown-wamid';
-    } catch { return 'unknown-wamid'; }
+      return String(r?.messages?.[0]?.xid || r?.id || responseXid);
+    } catch { return responseXid; }
   })();
 
   await appendLog({
@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     response_status: 200,
     response_body: responseBody,
     scenario,
-    note: `WA send accepted — message id: ${msgId}`,
+    note: `WA send accepted — message id: ${msgId}, xid: ${xid}`,
   });
 
   // Send 200 first, then schedule DRs
@@ -117,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds, 'WA DR: SENT');
 
@@ -150,7 +150,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds + config.wa_delivered_delay_seconds, 'WA DR: DELIVERED');
 
@@ -185,7 +185,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds, 'WA DR: DELIVERED (out-of-order, before SENT)');
 
@@ -218,7 +218,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds + config.wa_delivered_delay_seconds, 'WA DR: SENT (after DELIVERED)');
 
@@ -253,7 +253,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds, 'WA DR: READ (out-of-order, first)');
 
@@ -286,7 +286,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds + config.wa_delivered_delay_seconds, 'WA DR: DELIVERED (after READ)');
 
@@ -319,7 +319,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         ],
         object: 'whatsapp_business_account',
-        xid: generateXid()
+        xid: xid
       },
     }, config.wa_sent_delay_seconds + (config.wa_delivered_delay_seconds * 2), 'WA DR: SENT (after DELIVERED)');
 

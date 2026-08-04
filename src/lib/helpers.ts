@@ -28,13 +28,14 @@ export function generateJnsMessageId(): string {
 
 // ─── Template interpolation ────────────────────────────────
 
-export function interpolateCosterSuccess(template: string, to: string): string {
+export function interpolateCosterSuccess(template: string, to: string): { wamid: string; xid: string; body: string } {
   const wamid = generateWamid(to);
   const xid = generateXid();
-  return template
+  const body = template
     .replace(/\{\{wamid\}\}/g, wamid)
     .replace(/\{\{xid\}\}/g, xid)
     .replace(/\{\{to\}\}/g, to);
+  return { wamid, xid, body };
 }
 
 export function interpolateJnsSuccess(template: string): string {
