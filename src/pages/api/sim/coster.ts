@@ -58,16 +58,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // ── wa_success / wa_delivered_before_sent / wa_threshold_expire ─
   const { wamid: msgId, xid: responseXid, body: responseBody } = interpolateCosterSuccess(config.coster_success_body, to);
-  let parsedResponse: unknown;
-  try { parsedResponse = JSON.parse(responseBody); } catch { parsedResponse = responseBody; }
-
-  // Extract xid from response or fallback to responseXid
+  // Extract xid from incoming request body/headers if present, else from response template or generated responseXid
+  const incomingXid = body?.xid || body?.reference_id || body?.id || headers['x-reference-id'] || headers['x-id'] || headers['x-request-id-num'];
   const xid = (() => {
+    if (incomingXid) return String(incomingXid);
     try {
       const r = JSON.parse(responseBody);
       return String(r?.messages?.[0]?.xid || r?.id || responseXid);
     } catch { return responseXid; }
   })();
+
+  let parsedResponse: unknown;
+  try { parsedResponse = JSON.parse(responseBody); } catch { parsedResponse = responseBody; }
+
+  // If incoming xid was found in request, sync it into the coster success response body as well
+  let finalResponseBody = responseBody;
+  if (incomingXid && responseBody.includes(responseXid)) {
+    finalResponseBody = responseBody.replace(new RegExp(responseXid, 'g'), String(incomingXid));
+    try { parsedResponse = JSON.parse(finalResponseBody); } catch { parsedResponse = finalResponseBody; }
+  }
 
   await appendLog({
     endpoint: 'coster',
@@ -76,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     request_headers: headers,
     request_body: body,
     response_status: 200,
-    response_body: responseBody,
+    response_body: finalResponseBody,
     scenario,
     note: `WA send accepted — message id: ${msgId}, xid: ${xid}`,
   });
