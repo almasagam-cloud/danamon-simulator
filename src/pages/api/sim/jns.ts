@@ -4,6 +4,7 @@ import {
   appendLog,
   interpolateJnsSuccess,
   scheduleDR,
+  generateJnsMessageId,
 } from '@/lib/helpers';
 
 /**
@@ -17,12 +18,13 @@ import {
  *   sms_fail    → returns error status
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const config = await getConfig();
   const body = req.body || {};
+  const query = req.query || {};
 
   const headers: Record<string, string> = {};
   for (const [k, v] of Object.entries(req.headers)) {
@@ -51,20 +53,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // ── sms_success ────────────────────────────────────────────
+  // Generate JNS success response containing unique messageId
   const responseBody = interpolateJnsSuccess(config.jns_success_body);
 
-  // Extract the generated MessageId for DR
+  // Extract the exact MessageId generated for this response
   const messageId = (() => {
-    const match = responseBody.match(/MessageId=([^&]+)/);
-    return match ? match[1] : 'unknown-sms-id';
+    const match = responseBody.match(/MessageId=([^&]+)/i);
+    return match ? match[1] : generateJnsMessageId();
   })();
 
   await appendLog({
     endpoint: 'jns',
-    method: 'POST',
+    method: req.method || 'POST',
     path: req.url || '/api/sim/jns',
     request_headers: headers,
-    request_body: body,
+    request_body: req.method === 'GET' ? query : body,
     response_status: 200,
     response_body: responseBody,
     scenario,
@@ -72,11 +75,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   // Extract recipient number (msisdn) from body or query if available
-  const msisdn = body?.to || body?.msisdn || '6287876780769';
+  const msisdn = (typeof body === 'object' && body?.to) || query?.to || query?.msisdn || body?.msisdn || '6287876780769';
 
   res.status(200).setHeader('Content-Type', 'application/x-www-form-urlencoded').send(responseBody);
 
-  // Auto-send SMS delivery report to SMS webhook URL via GET request
+  // Auto-send SMS delivery report to SMS webhook URL via GET request with EXACT SAME messageId
   const smsWebhookUrl = config.sms_webhook_url || config.callback_url;
   const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }); // e.g. 01/02/2026 02:47:08 PM
 
@@ -89,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       deliverystatus: '1',
       sender: 'BRI-OTP',
       description: 'SMS sent successfully',
-      msisdn: msisdn,
+      msisdn: String(msisdn),
       datereceived: nowStr,
       datehit: nowStr,
     },
