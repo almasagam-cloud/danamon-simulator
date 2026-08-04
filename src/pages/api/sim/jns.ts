@@ -80,21 +80,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.status(200).setHeader('Content-Type', 'application/x-www-form-urlencoded').send(responseBody);
 
   // Auto-send SMS delivery report to SMS webhook URL via GET request with EXACT SAME messageId
-  const smsWebhookUrl = config.sms_webhook_url || config.callback_url;
+  let smsWebhookUrl = config.sms_webhook_url || config.callback_url;
   const nowStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }); // e.g. 01/02/2026 02:47:08 PM
 
-  scheduleDR(smsWebhookUrl, {
-    method: 'GET',
-    query: {
-      userid: 'Jatis',
-      password: 'kkdmybri123',
-      messageId: messageId,
-      deliverystatus: '1',
-      sender: 'BRI-OTP',
-      description: 'SMS sent successfully',
-      msisdn: String(msisdn),
-      datereceived: nowStr,
-      datehit: nowStr,
-    },
-  }, config.sms_dr_delay_seconds, `SMS DR: DELIVERED (MessageId: ${messageId})`);
+  if (smsWebhookUrl.includes('{{message_id}}') || smsWebhookUrl.includes('?')) {
+    // If full URL template is provided in config, replace placeholders
+    smsWebhookUrl = smsWebhookUrl
+      .replace(/\{\{message_id\}\}/g, messageId)
+      .replace(/\{\{msisdn\}\}/g, String(msisdn));
+
+    scheduleDR(smsWebhookUrl, {
+      method: 'GET',
+    }, config.sms_dr_delay_seconds, `SMS DR: DELIVERED (MessageId: ${messageId})`);
+  } else {
+    scheduleDR(smsWebhookUrl, {
+      method: 'GET',
+      query: {
+        userid: 'Jatis',
+        password: 'kkdmybri123',
+        messageId: messageId,
+        deliverystatus: '1',
+        sender: 'BRI-OTP',
+        description: 'SMS sent successfully',
+        msisdn: String(msisdn),
+        datereceived: nowStr,
+        datehit: nowStr,
+      },
+    }, config.sms_dr_delay_seconds, `SMS DR: DELIVERED (MessageId: ${messageId})`);
+  }
 }
