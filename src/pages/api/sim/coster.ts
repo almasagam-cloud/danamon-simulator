@@ -96,6 +96,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const waWebhookUrl = config.wa_webhook_url || config.callback_url;
 
   if (scenario === 'wa_fail') {
+    // Extract incoming request outbound template info if provided, else construct based on incoming body
+    const incomingTemplate = body?.template || body?.outbound?.data?.template;
+    const isUtility = incomingTemplate?.name !== 'otp_alter_table' && incomingTemplate?.name?.includes('utl');
+    const category = isUtility ? 'utility' : (body?.category || 'authentication');
+    
+    const templateData = incomingTemplate || {
+      name: 'otp_alter_table',
+      language: {
+        code: 'id',
+        policy: 'deterministic',
+      },
+      namespace: null,
+      components: [
+        {
+          type: 'body',
+          cards: null,
+          index: null,
+          sub_type: null,
+          parameters: [
+            {
+              text: '123456',
+              type: 'text',
+            },
+          ],
+        },
+        {
+          type: 'button',
+          cards: null,
+          index: 0,
+          sub_type: 'url',
+          parameters: [
+            {
+              text: '123456',
+              type: 'text',
+            },
+          ],
+        },
+      ],
+    };
+
     // Send DR with status failed (Message undeliverable 24h limit)
     scheduleDR(waWebhookUrl, {
       headers: { 'X-Request-Id': uuidv4() },
@@ -123,7 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   messages: null,
                   messaging_product: 'whatsapp',
                   metadata: {
-                    display_phone_number: '6283879329048',
+                    display_phone_number: '6255925650922',
                     phone_number_id: '108020779027196',
                   },
                   old_limit: '',
@@ -146,7 +186,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                       id: msgId,
                       pricing: {
                         billable: true,
-                        category: 'authentication',
+                        category: category,
                         pricing_model: 'PMP',
                         type: 'regular',
                       },
@@ -170,40 +210,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           data: {
             to: to,
             type: 'template',
-            template: {
-              name: 'otp_alter_table',
-              language: {
-                code: 'id',
-                policy: 'deterministic',
-              },
-              namespace: null,
-              components: [
-                {
-                  type: 'body',
-                  cards: null,
-                  index: null,
-                  sub_type: null,
-                  parameters: [
-                    {
-                      text: '123456',
-                      type: 'text',
-                    },
-                  ],
-                },
-                {
-                  type: 'button',
-                  cards: null,
-                  index: 0,
-                  sub_type: 'url',
-                  parameters: [
-                    {
-                      text: '123456',
-                      type: 'text',
-                    },
-                  ],
-                },
-              ],
-            },
+            template: templateData,
             messaging_product: 'whatsapp',
           },
         },
