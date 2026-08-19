@@ -208,7 +208,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         },
       },
-    }, config.wa_sent_delay_seconds, 'WA DR: FAILED (Undeliverable 24h limit)');
+    }, 0, 'WA DR: FAILED (Undeliverable 24h limit)');
   } else if (scenario === 'wa_success') {
     // SENT DR → then DELIVERED DR
     scheduleDR(waWebhookUrl, {
