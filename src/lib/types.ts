@@ -1,10 +1,11 @@
 // ─── Scenarios ─────────────────────────────────────────────
 export type WaScenario =
-  | 'wa_success'                  // WA success, DR: SENT → DELIVERED
-  | 'wa_fail'                     // WA error (5xx), no DR
-  | 'wa_delivered_before_sent'    // WA success, DR: DELIVERED first, then SENT
-  | 'wa_read_before_delivered_sent' // WA success, DR: READ first, then DELIVERED, then SENT
-  | 'wa_threshold_expire';        // WA success, no DR at all (trigger threshold reroute)
+  | 'wa_success'                  // WA success, DR: SENT lalu DELIVERED
+  | 'wa_fail'                     // WA success 200, tapi kirim DR status: failed (undeliverable 24h limit)
+  | 'coster_fail_500'             // Coster API error 500
+  | 'wa_delivered_before_sent'    // WA success, DR: DELIVERED dulu, baru SENT
+  | 'wa_read_before_delivered_sent' // WA success, DR: READ dulu, baru DELIVERED, lalu SENT
+  | 'wa_threshold_expire';        // WA success, tidak ada DR at all (trigger threshold reroute)
 
 export type SmsScenario =
   | 'sms_success'   // SMS accepted, auto send DR after delay
