@@ -173,7 +173,7 @@ export default function Dashboard() {
               {/* WA Scenario */}
               <div style={{ background: '#111118', border: '1px solid #1f1f2e', borderRadius: 12, padding: 24, gridColumn: '1 / -1' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.08em' }}>WhatsApp Scenario</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                   {WA_SCENARIOS.map(s => (
                     <button key={s.value} onClick={() => patch('wa_scenario', s.value)} style={{
                       padding: '14px 12px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
