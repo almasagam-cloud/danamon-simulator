@@ -5,7 +5,8 @@ export type WaScenario =
   | 'coster_fail_500'             // Coster API error 500
   | 'wa_delivered_before_sent'    // WA success, DR: DELIVERED dulu, baru SENT
   | 'wa_read_before_delivered_sent' // WA success, DR: READ dulu, baru DELIVERED, lalu SENT
-  | 'wa_threshold_expire';        // WA success, tidak ada DR at all (trigger threshold reroute)
+  | 'wa_threshold_expire'         // WA success, tidak ada DR at all (trigger threshold reroute)
+  | 'dr_xid_not_found';           // WA success, DR dikirim tapi xid = "0000" (tidak dikenali API Gateway)
 
 export type SmsScenario =
   | 'sms_success'   // SMS accepted, auto send DR after delay

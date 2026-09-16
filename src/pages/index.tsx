@@ -9,6 +9,7 @@ const WA_SCENARIOS: { value: WaScenario; label: string; color: string; desc: str
   { value: 'wa_delivered_before_sent', label: 'DR Out-of-Order (Delivered)', color: '#f59e0b', desc: 'WA berhasil → DR: DELIVERED dulu, baru SENT' },
   { value: 'wa_read_before_delivered_sent', label: 'DR Out-of-Order (Read First)', color: '#ec4899', desc: 'WA berhasil → DR: READ dulu, baru DELIVERED, lalu SENT' },
   { value: 'wa_threshold_expire', label: 'Threshold Expire', color: '#8b5cf6', desc: 'WA berhasil → tidak ada DR → reroute setelah TTL' },
+  { value: 'dr_xid_not_found', label: 'DR XID Not Found', color: '#f97316', desc: 'WA berhasil → DR dikirim tapi xid=0000 (tidak dikenali Gateway)' },
 ];
 
 const SMS_SCENARIOS: { value: SmsScenario; label: string; color: string; desc: string }[] = [
@@ -172,7 +173,7 @@ export default function Dashboard() {
               {/* WA Scenario */}
               <div style={{ background: '#111118', border: '1px solid #1f1f2e', borderRadius: 12, padding: 24, gridColumn: '1 / -1' }}>
                 <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.08em' }}>WhatsApp Scenario</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10 }}>
                   {WA_SCENARIOS.map(s => (
                     <button key={s.value} onClick={() => patch('wa_scenario', s.value)} style={{
                       padding: '14px 12px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
